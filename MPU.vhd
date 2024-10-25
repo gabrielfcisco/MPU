@@ -34,6 +34,10 @@ architecture Behavioral of MPU is
 	
     signal operation: std_logic_vector(2 downto 0) := (others => '0');  -- Tipo de operação (add, sub, etc.)
 
+    -- Sinal do inteiro para o FILL
+
+    signal inteiro: std_logic_vector(15 downto 0) := (others => '0');
+
 begin
 	 
     process(clk, reset)
@@ -103,14 +107,14 @@ begin
 					when DECODE =>
             
 
-						case data (15 downto 12) is
+						case data (15 downto 13) is
                 
-                    when "0000" => operation <="000"; -- add
-                    when "0001" => operation <= "001"; -- sub
-                    when "0010" => operation <= "010"; -- mul
-                    when "0011" => operation <= "011"; -- mac
-                    when "0100" => operation <= "100"; -- fill
-                    when "0101" => operation <= "100"; -- identity
+                    when "000" => operation <="000"; -- add
+                    when "001" => operation <= "001"; -- sub
+                    when "010" => operation <= "010"; -- mul
+                    when "011" => operation <= "011"; -- mac
+                    when "100" => operation <= "100"; -- fill
+                    when "101" => operation <= "100"; -- identity
                     when others => operation <= "111"; -- comando inválido
 
 						end case;
@@ -187,17 +191,47 @@ begin
 
                 --     end loop;
 
-                -- when "100" =>  -- FILL (preencher matriz com valor)
+                when "100" =>  -- FILL (preencher matriz com valor)
+                        
+                    case data (12 downto 11) is
+            
+                        when "00" => 
 
-                --     for row in 0 to 3 loop
+                            inteiro <= "00000"&data(10 downto 0); 
 
-                --         for col in 0 to 3 loop
+                            for i in 0 to 15 loop
 
-                --             C(row, col) <= (others => '1');  -- Exemplo: preenche com 1s
+                                iA <= i + 32;
+                        
+                                memory(iA) <= inteiro;
+                            
+                            end loop;
 
-                --         end loop;
+                        when "01" =>
 
-                --     end loop;
+                            inteiro <= "00000"&data(10 downto 0);
+
+                            for i in 0 to 15 loop
+
+                                iB <= i + 48;
+                        
+                                memory(iB) <= inteiro;
+                            
+                            end loop;
+
+                        when "10" =>
+
+                            inteiro <= "00000"&data(10 downto 0); 
+
+                            for i in 0 to 15 loop
+
+                                iC <= i + 16;
+                        
+                                memory(iC) <= inteiro;
+                            
+                            end loop;
+
+                    end case;
 
                 -- when "101" =>  -- IDENTITY (matriz identidade)
 
