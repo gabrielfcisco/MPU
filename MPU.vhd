@@ -24,11 +24,11 @@ architecture Behavioral of MPU is
 
     signal i: integer range 0 to 15;                   -- Índices para percorrer as matrizes
     signal j, k: integer range 0 to 3;
-	signal memory_aux: integer range 0 to 63;
+	 signal memory_aux: integer range 0 to 63;
      
 
     -- Definindo os estados da FSM
-    type state_type is (IDLE, READ_WR, O_MATRIX, W_MATRIX, WRITE_DATA, DECODE, EXECUTE, COMPLETE);
+    type state_type is (IDLE, READ_WR, O_MATRIX, W_MATRIX, WRITE_DATA, DECODE, EXCEPTION, EXECUTE, COMPLETE);
     signal CURRENT_STATE: state_type;
 
     signal operation: std_logic_vector(2 downto 0) := (others => '0');  -- Tipo de operação (add, sub, etc.)
@@ -42,15 +42,17 @@ begin
 
         if reset = '1' then
 
-            for iA in 0 to 63 loop
+            for i in 0 to 63 loop
 
-                memory(iA) <= (others => '0');
+                memory(i) <= (others => '0');
 
             end loop;
 
             CURRENT_STATE <= IDLE;
 
             intr <= '0';
+
+            data <= (others => 'Z');
 
         elsif rising_edge(clk) then
 
@@ -60,11 +62,7 @@ begin
 
                     intr <= '0';
 
-                    if ce_n = '1' then
-
-                        CURRENT_STATE <= CURRENT_STATE;
-
-                    elsif ce_n = '0' then
+                    if ce_n = '0' then
 
                         CURRENT_STATE <= READ_WR;
 
@@ -115,7 +113,7 @@ begin
                         when "011" => operation <= "011"; -- mac
                         when "100" => operation <= "100"; -- fill
                         when "101" => operation <= "101"; -- identity
-                        when others => operation <= "111"; -- comando inválido
+                        when others => operation <= "111"; -- comando inválido                            
 
                     end case;
 
@@ -158,7 +156,7 @@ begin
                                     
                                     end loop;
 												
-								    memory(i*4 + j + 16) <= temp_result(15 downto 0);
+									memory(i*4 + j + 16) <= temp_result(15 downto 0);
 												
                                 end loop;
 										  
@@ -242,16 +240,14 @@ begin
                                 end if;
 										  
                             end loop;
-
-                        when others =>  -- Comando inválido
-								
-                            for i in 0 to 15 loop
+		 
 									 
-                                memory(i + 16) <= (others => '0');
-										  
-                            end loop;
+						when others =>
+								
+							CURRENT_STATE <= EXCEPTION;
 
                     end case;
+						  
 
                     CURRENT_STATE <= COMPLETE;
 
@@ -260,6 +256,10 @@ begin
                     intr <= '1';  -- Levanta o sinal de interrupção
 						  
                     CURRENT_STATE <= IDLE;  -- Volta para o estado de espera (IDLE)
+
+                when EXCEPTION =>
+
+                    intr <= '1';
 
                 when others =>
 					 
