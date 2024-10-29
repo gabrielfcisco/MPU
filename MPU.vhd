@@ -67,6 +67,8 @@ begin
                         CURRENT_STATE <= READ_WR;
 
                     end if;
+						  
+						  data <= (others => 'Z');
 
                 when READ_WR =>
 
@@ -111,7 +113,12 @@ begin
                         when "001" => operation <= "001"; -- sub
                         when "010" => operation <= "010"; -- mul
                         when "011" => operation <= "011"; -- mac
-                        when "100" => operation <= "100"; -- fill
+								
+                        when "100" => 
+								
+											operation <= "100"; -- fill
+											inteiro <= "00000"&data(10 downto 0); 
+								
                         when "101" => operation <= "101"; -- identity
                         when others => operation <= "111"; -- comando inválido                            
 
@@ -190,8 +197,6 @@ begin
     
                                 when "00" => 
 
-                                    inteiro <= "00000"&data(10 downto 0); 
-
                                     for i in 0 to 15 loop
                 
                                         memory(i + 32) <= inteiro;  --iA
@@ -200,8 +205,6 @@ begin
 
                                 when "01" =>
 
-                                    inteiro <= "00000"&data(10 downto 0);
-
                                     for i in 0 to 15 loop
                 
                                         memory(i + 48) <= inteiro;   --iB
@@ -209,8 +212,6 @@ begin
                                     end loop;
 
                                 when "10" =>
-
-                                    inteiro <= "00000"&data(10 downto 0); 
 
                                     for i in 0 to 15 loop
                 
@@ -227,28 +228,73 @@ begin
 
                         when "101" =>  -- IDENTITY (matriz identidade)
 								
-                            for i in 0 to 15 loop
-									 
-                                if i mod 5 = 0 then
-										  
-                                    memory(i + 16) <= "0000000000000001";  -- 1 na diagonal
-												
-                                else
-										  
-                                    memory(i + 16) <= (others => '0');  -- 0 nas outras posições
-												
-                                end if;
-										  
-                            end loop;
+								
+										case data (12 downto 11) is
+		 
+											  when "00" => 
+											  
+													for i in 0 to 15 loop
+													
+													   if i mod 5 = 0 then
+												  
+															memory(i + 32) <= "0000000000000001";  -- 1 na diagonal
+														
+														else
+												  
+															memory(i + 32) <= (others => '0');  -- 0 nas outras posições
+														
+														end if;
+														
+													end loop;
+													
+
+											  when "01" =>
+											  --
+													for i in 0 to 15 loop
+													
+														if i mod 5 = 0 then
+												  
+															memory(i + 48) <= "0000000000000001";  -- 1 na diagonal
+														
+														else
+												  
+															memory(i + 48) <= (others => '0');  -- 0 nas outras posições
+														
+														end if;
+														
+													end loop;
+													
+
+											  when "10" =>
+
+													for i in 0 to 15 loop
+													
+														if i mod 5 = 0 then
+												  
+															memory(i + 16) <= "0000000000000001";  -- 1 na diagonal
+														
+														else
+												  
+															memory(i + 16) <= (others => '0');  -- 0 nas outras posições
+														
+														end if;
+														
+													end loop;
+													
+													
+											  when others =>
+											  
+													CURRENT_STATE <= IDLE; -- NÃO FAZ NADA
+
+										 end case;
 		 
 									 
-						when others =>
-								
-							CURRENT_STATE <= EXCEPTION;
+								when others =>
+											
+										CURRENT_STATE <= EXCEPTION;
 
-                    end case;
+                  end case;
 						  
-
                     CURRENT_STATE <= COMPLETE;
 
                 when COMPLETE =>
