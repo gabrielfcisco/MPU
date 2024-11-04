@@ -18,9 +18,11 @@ end MPU;
 architecture Behavioral of MPU is
 
     type Matrix is array (63 downto 0) of std_logic_vector(15 downto 0);
-    signal memory: Matrix;  
+    signal memory: Matrix;
 
-    signal temp_result: std_logic_vector(31 downto 0);  -- Resultado temporário
+	 
+	 type MatrixAux is array (3 downto 0, 3 downto 0) of std_logic_vector(31 downto 0);
+	 signal matrix_aux_multiplier: MatrixAux;
 
     signal i: integer range 0 to 15;                   -- Índices para percorrer as matrizes
     signal j, k: integer range 0 to 3;
@@ -135,8 +137,10 @@ begin
 								
                             for i in 0 to 15 loop
 									 
+									 
                                 memory(i + 16) <= std_logic_vector(unsigned(memory(i + 32)) + unsigned(memory(i + 48)));
 										  
+
                             end loop;
 									 
 
@@ -150,47 +154,38 @@ begin
 									 
 
                         when "010" =>  -- MUL
-
-                            for i in 0 to 3 loop
-									 
-                                    temp_result <= (others => '0');
-
-                                for j in 0 to 3 loop
+									
+									 for i in 0 to 3 loop
+									
+										   for j in 0 to 3 loop
 										  
-                                    for k in 0 to 3 loop
-                                    
-                                        temp_result <= std_logic_vector(unsigned(temp_result) + unsigned(memory(i*4 + j + 32)) * unsigned(memory(48 + j + k*4)));
-                                    
-                                    end loop;
-												
-									memory(i*4 + j + 16) <= temp_result(15 downto 0);
-												
-                                end loop;
-										  
-                            end loop;
-									 
+												 memory(i * 4 + j + 16) <= std_logic_vector(resize(unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48))      +
+                                                                                                   unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48 + 4))  +
+                                                                                                   unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48 + 8))  +
+                                                                                                   unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48 + 12))
+                                                                                                   ,16)
+                                                                                                   );	
+										   end loop;
+									 end loop;
+										 
 
                         when "011" =>  -- MAC (MUL + C)
 								
-							for i in 0 to 3 loop
-									 
-                                temp_result <= (others => '0');
-
-                                for j in 0 to 3 loop
-										  
-                                    for k in 0 to 3 loop
-                                    
-                                        temp_result <= std_logic_vector(unsigned(temp_result) + unsigned(memory(i*4 + j + 32)) * unsigned(memory(48 + j + k*4)));
-                                    
-                                    end loop;
-                                    
-                                    memory(i*4 + j + 16) <= std_logic_vector(unsigned(memory(i*4 + j + 16)) + unsigned(temp_result(15 downto 0)));
-												
-                                end loop;
-										  
-                            end loop;
-				 
-									 
+									 for i in 0 to 3 loop
+								
+										 for j in 0 to 3 loop
+									  
+											 memory(i * 4 + j + 16) <= std_logic_vector(resize(unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48))      +
+                                                                                               unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48 + 4))  +
+                                                                                               unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48 + 8))  +
+                                                                                               unsigned(memory(i*4 + 32)) * unsigned(memory(j + 48 + 12)) +
+                                                                                               unsigned(memory(i * 4 + j + 16))
+                                                                                               ,16)
+                                                                                               );	
+										 end loop;
+								    end loop;
+											
+	 
                         when "100" =>  -- FILL (preencher matriz com valor)
                 
                             case data (12 downto 11) is
@@ -229,57 +224,57 @@ begin
                         when "101" =>  -- IDENTITY (matriz identidade)
 								
 								
-										case data (12 downto 11) is
-		 
-											  when "00" => 
-											  
-													for i in 0 to 15 loop
-													
-													   if i mod 5 = 0 then
-												  
-															memory(i + 32) <= "0000000000000001";  -- 1 na diagonal
-														
-														else
-												  
-															memory(i + 32) <= (others => '0');  -- 0 nas outras posições
-														
-														end if;
-														
-													end loop;
-													
+                            case data (12 downto 11) is
 
-											  when "01" =>
-											  --
-													for i in 0 to 15 loop
-													
-														if i mod 5 = 0 then
-												  
-															memory(i + 48) <= "0000000000000001";  -- 1 na diagonal
-														
-														else
-												  
-															memory(i + 48) <= (others => '0');  -- 0 nas outras posições
-														
-														end if;
-														
-													end loop;
-													
+                                    when "00" => 
+                                    
+                                        for i in 0 to 15 loop
+                                        
+                                            if i mod 5 = 0 then
+                                        
+                                                memory(i + 32) <= "0000000000000001";  -- 1 na diagonal
+                                            
+                                            else
+                                        
+                                                memory(i + 32) <= (others => '0');  -- 0 nas outras posições
+                                            
+                                            end if;
+                                            
+                                        end loop;
+                                        
 
-											  when "10" =>
+                                    when "01" =>
+                                    --
+                                        for i in 0 to 15 loop
+                                        
+                                            if i mod 5 = 0 then
+                                        
+                                                memory(i + 48) <= "0000000000000001";  -- 1 na diagonal
+                                            
+                                            else
+                                        
+                                                memory(i + 48) <= (others => '0');  -- 0 nas outras posições
+                                            
+                                            end if;
+                                            
+                                        end loop;
+                                        
 
-													for i in 0 to 15 loop
-													
-														if i mod 5 = 0 then
-												  
-															memory(i + 16) <= "0000000000000001";  -- 1 na diagonal
-														
-														else
-												  
-															memory(i + 16) <= (others => '0');  -- 0 nas outras posições
-														
-														end if;
-														
-													end loop;
+                                    when "10" =>
+
+                                        for i in 0 to 15 loop
+                                        
+                                            if i mod 5 = 0 then
+                                        
+                                                memory(i + 16) <= "0000000000000001";  -- 1 na diagonal
+                                            
+                                            else
+                                        
+                                                memory(i + 16) <= (others => '0');  -- 0 nas outras posições
+                                            
+                                            end if;
+                                            
+                                        end loop;
 													
 													
 											  when others =>
@@ -296,6 +291,7 @@ begin
                   end case;
 						  
                     CURRENT_STATE <= COMPLETE;
+						  
 
                 when COMPLETE =>
 					 
